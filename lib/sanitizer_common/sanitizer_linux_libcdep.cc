@@ -384,24 +384,17 @@ static void **ThreadSelfSegbase() {
 # elif defined(__x86_64__)
   // sysarch(AMD64_GET_FSBASE, segbase);
   __asm __volatile("movq %%fs:0, %0" : "=r" (segbase));
-# elif defined(__mips__)
+# elif defined(__mips64__)
   // MIPS uses TLS variant I. The thread pointer (in hardware register $29)
   // points to the end of the TCB + 0x7000.  The TCB contains two pointers,
   // one to the dtv and the second to the struct pthread.
   const uptr kTlsTcbOffset = 0x7000;
   const uptr kTlsTcbSize = sizeof(void *) * 2;
   uptr thread_pointer;
-#  if defined(__mips64__)
   asm volatile(".set push;\
                 .set mips64r2;\
                 rdhwr %0,$29;\
                 .set pop" : "=r" (thread_pointer));
-#  else
-  asm volatile(".set push;\
-                .set mips32r2;\
-                rdhwr %0,$29;\
-                .set pop" : "=r" (thread_pointer));
-#  endif
   segbase = (void **)(thread_pointer - kTlsTcbOffset - kTlsTcbSize);
 # else
 #  error "unsupported CPU arch"
